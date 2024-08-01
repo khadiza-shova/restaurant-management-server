@@ -1,23 +1,11 @@
 const express = require("express");
-var cors= require("cors");
+var cors = require('cors');
 const app = express();
-var jwt = require('jsonwebtoken');
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 require("dotenv").config();
 const port = process.env.port || 5000;
 
-app.use(cors({
-  origin:[
-  //  "http://localhost:5174",
-  //  'https://stunning-zabaione-17bb92.netlify.app',
-  //  "https://restaurant-management-28904.web.app",
-  //  "https://restaurant-management-28904.firebaseapp.com"
-  ],
-  credentials:true
-}));
-
-
-
+app.use(cors());
 app.use(express.json());
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.m1npfxh.mongodb.net/?retryWrites=true&w=majority`;
@@ -31,47 +19,28 @@ const client = new MongoClient(uri, {
   },
 });
 
-const AllFoodItems = client
-  .db("Restaurant_management")
-  .collection("AllFoodItems");
-const addFoodItem = client
-  .db("Restaurant_management")
-  .collection("addFoodItem");
+const AllFoodItems = client.db("Restaurant_management").collection("AllFoodItems");
+const addFoodItem = client.db("Restaurant_management").collection("addFoodItem");
+const allOrder = client.db("Restaurant_management").collection("AllOrder");
 
-  const allOrder = client.db("Restaurant_management").collection("AllOrder")
 async function run() {
   try {
-    // Connect the client to the server	(optional starting in v4.7)
-    // await client.connect();
-    // Send a ping to confirm a successful connection
-    // await client.db("admin").command({ ping: 1 });
-
-    // AuthRelated API 
-    // app.post("/jwt",async(req,res)=>{
-    //   const user = req.body;
-    //   console.log(user);
-    // })
-
-
     // Pagination
     app.get('/itemsCount', async (req, res) => {
       const count = await AllFoodItems.estimatedDocumentCount();
       res.send({ count });
     })
 
-      app.get('/allFood', async (req, res) => {
+    app.get('/allFood', async (req, res) => {
       const page = parseInt(req.query.page);
       const size = parseInt(req.query.size);
 
-     
       const result = await AllFoodItems.find()
-      .skip(page * size)
-      .limit(size)
-      .toArray();
+        .skip(page * size)
+        .limit(size)
+        .toArray();
       res.send(result);
     })
-
-
 
     // app.get("/allFood", async (req, res) => {
     //   const result = await AllFoodItems.find().toArray();
@@ -85,7 +54,6 @@ async function run() {
       res.send(result);
     });
 
-  
     app.get("/topFood", async (req, res) => {
       const result = await AllFoodItems.find().limit(6).toArray();
       res.send(result);
@@ -109,8 +77,16 @@ async function run() {
       res.send(result);
     });
 
+
+    app.get("/updateItem/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await addFoodItem.find(query).toArray();
+      res.send(result);
+    })
+
     // Order
-    app.post("/order",async(req,res)=>{
+    app.post("/order", async (req, res) => {
       const orderData = req.body;
       const result = await allOrder.insertOne(orderData);
       res.send(result);
@@ -127,23 +103,12 @@ async function run() {
     });
 
     // Delete 
-    app.delete("/OrderItem/:id", async(req,res)=>{
+    app.delete("/OrderItem/:id", async (req, res) => {
       const id = req.params;
-      const query = {_id: new ObjectId(id)}
+      const query = { _id: new ObjectId(id) }
       const result = await allOrder.deleteOne(query);
       res.send(result);
-      
     })
-
-
-
-
-
-
-
-
-
-
 
 
 
